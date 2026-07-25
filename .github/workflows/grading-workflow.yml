@@ -1,0 +1,95 @@
+name: Grade Assignment
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  send-score:
+    runs-on: ubuntu-latest
+    env:
+      vocareumGradeFile: .grading/grade.txt
+      vocareumReportFile: .grading/report.txt
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.12"
+
+      - name: Check for Vocareum infrastructure files
+        id: check_skip
+        run: |
+          INFRA_DIR=".vocareum/.infrastructure"
+          TEMPLATE_FILE="$INFRA_DIR/lab.template"
+          POLICY_FILE="$INFRA_DIR/lab.policy"
+
+          # If both template and policy files exist, we skip grading.
+          if [[ -f "$TEMPLATE_FILE" ]] && [[ -f "$POLICY_FILE" ]]; then
+            echo "Vocareum infrastructure files found ($TEMPLATE_FILE and $POLICY_FILE). Setting skip_grading to true."
+            echo "skip_grading=true" >> $GITHUB_OUTPUT
+            # Also set the score to 0 immediately if skipped
+            echo "TOTAL_SCORE=0" >> $GITHUB_ENV
+          else
+            echo "Vocareum infrastructure files NOT found. Setting skip_grading to false."
+            echo "skip_grading=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare Vocareum Environment variables
+        if: steps.check_skip.outputs.skip_grading == 'false'
+        run: |
+          mkdir -p .grading
+          export vocareumGradeFile="$PWD/.grading/grade.txt"
+          export vocareumReportFile="$PWD/.grading/report.txt"
+          echo "vocareumGradeFile=$vocareumGradeFile" >> $GITHUB_ENV
+          echo "vocareumReportFile=$vocareumReportFile" >> $GITHUB_ENV
+
+
+      - name: Run Vocareum grading script
+        continue-on-error: true   
+        if: steps.check_skip.outputs.skip_grading == 'false'
+        run: bash .vocareum/.scripts/grade.sh
+
+      - name: Parse and calculate total score
+        if: steps.check_skip.outputs.skip_grading == 'false'
+        run: |
+          TOTAL_SCORE_VALUE=$(awk -F',' '{ sum+=$2+0 } END { print sum }' .grading/grade.txt)
+          echo "TOTAL_SCORE=$TOTAL_SCORE_VALUE" >> $GITHUB_ENV
+          echo "✅ Total score: $TOTAL_SCORE_VALUE"
+
+      - name: Extract lab ID
+        id: extract_lab_id
+        run: |
+          # Get the full repo name from the GitHub context
+          repo_name="${{ github.event.repository.name }}"
+          # Use Bash parameter expansion to remove `-homework` and everything after it
+          lab_id="${repo_name%%-homework*}"
+
+          echo "The extracted lab ID is: $lab_id"
+
+          # Set an environment variable so the next step can access it
+          echo "LAB_ID=$lab_id" >> $GITHUB_ENV
+
+      - name: Get Current Date and Time via Shell
+        id: shell_time
+        run: |
+          # Use a variable for clarity, then output to GITHUB_OUTPUT
+          current_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo "current_time=$current_time" >> $GITHUB_OUTPUT
+          echo "Current UTC time is $current_time"
+
+      - name: Send score to LTI backend
+        env:
+          LTI_BACKEND_URL: "https://53dweiwpad.execute-api.us-east-2.amazonaws.com/prod/"
+        run: |
+            curl -X POST "$LTI_BACKEND_URL/lti/score" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "github_handle": "${{ github.actor }}",
+                "score": "${{ env.TOTAL_SCORE }}",
+                "finish_time": "${{ steps.shell_time.outputs.current_time }}",
+                "lab_id": "${{ env.LAB_ID }}"
+              }'
