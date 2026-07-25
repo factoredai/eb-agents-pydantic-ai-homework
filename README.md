@@ -24,6 +24,7 @@ In this lab we will gain experience building agents that can work reliably in a 
 
 Your goal is to build an agent that can play the game decently well, better than the stochastic agents available in the `teyuna-simulate` command. You will do it by incrementally adding more capabilities to the agent. In each of the tasks below, you will need to develop a new version of the agent. Once you think you are done with the implementation of each task, you can test it with `make run agent=[version]`, which will launch a simulation where you can watch two stochastic agents playing against the one you created.
 
+![Game Play](animation.gif)
 
 ### Task 1: An agent in the wild
 
