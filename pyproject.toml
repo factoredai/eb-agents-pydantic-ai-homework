@@ -1,0 +1,37 @@
+[project]
+name = "catan-agent"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "boto3>=1.43.55",
+    "httpx2>=2.7.0",
+    "mpy>=0.1",
+    "pydantic-ai>=2.15.0",
+    "teyuna-core",
+    "teyuna-sdk",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "ruff>=0.15.22",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = [
+    "teyuna/packages/sdk-python",
+    "teyuna/packages/teyuna-core",
+]
+
+[tool.uv.sources]
+teyuna-sdk = { workspace = true }
+teyuna-core = { workspace = true }
+
+
+[tool.mypy]
+mypy_path = ["src"]
+explicit_package_bases = true
+files = ["src"]

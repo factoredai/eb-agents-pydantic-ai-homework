@@ -1,0 +1,67 @@
+name: Propagate updates from homework repo to forked repos
+
+on:
+  push:
+    branches: main
+  workflow_dispatch:
+
+jobs:
+  check-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if repo ends with -homework
+        id: check_repo
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          echo "Repository name: $REPO_NAME"
+          if [[ "$REPO_NAME" == *"-homework" ]]; then
+            echo "is_homework=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_homework=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Invoke Lambda
+        id: invoke_lambda
+        if: steps.check_repo.outputs.is_homework == 'true'
+        env:
+          LAMBDA_URL: "https://vg6cmvk5yuoormkwjmulpgcyb40jsqfs.lambda-url.us-east-2.on.aws/"
+        run: |
+          echo "Invoking Lambda for homework repo..."
+          response_output=$(curl -s -w "%{http_code}" -X POST \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "main_branch_commit_sha": "${{ github.sha }}",
+              "delete_branch_if_exists": true
+            }' \
+            "$LAMBDA_URL")
+
+          # Separate the status code from the response body
+          http_code=$(echo "$response_output" | sed 's/.*\(...\)$/\1/')
+          response_body=$(echo "$response_output" | sed 's/\(...\)$//')
+
+          echo "Lambda returned HTTP status code: $http_code"
+          echo "Lambda response body: $response_body"
+
+          echo "http_code=$http_code" >> $GITHUB_OUTPUT
+          echo "response_body=$response_body" >> $GITHUB_OUTPUT
+
+      - name: Skip workflow for non-homework repos
+        if: steps.check_repo.outputs.is_homework == 'false'
+        run: |
+          echo "This repository is not a homework repo. Skipping Lambda invocation."
+
+      - name: Check Lambda Response
+        if: steps.check_repo.outputs.is_homework == 'true' && steps.invoke_lambda.outputs.http_code != '200'        
+        run: |
+          echo "Lambda invocation failed with HTTP status code: ${{ steps.invoke_lambda.outputs.http_code }}"
+          echo "Response Body:"
+          echo '${{ steps.invoke_lambda.outputs.response_body }}'
+          exit 1
+
+      - name: Success
+        if: steps.check_repo.outputs.is_homework == 'true' && steps.invoke_lambda.outputs.http_code == '200'        
+        run: |
+          echo "Lambda successfully processed the request."
+          echo "Response Body:"
+          echo '${{ steps.invoke_lambda.outputs.response_body }}'
