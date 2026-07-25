@@ -95,7 +95,7 @@ class Agent:
             )
             # TODO: call the agent with the prompt, dependencies and history here.
             ## homework:start
-            # result = ...
+            raise NotImplementedError
             ## homework:end
             history = list(result.all_messages())
 
