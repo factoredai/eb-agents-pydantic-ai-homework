@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-vocareum-plugin"
+version = "0.1.0"
+description = "A pytest plugin for Vocareum grading integration"
+authors = [{ name = "Factored AI", email = "team-engineering@factored.ai" }]
+requires-python = ">=3.8"
+dependencies = [
+    "pytest >= 8.0",
+    "python-dotenv"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest-cov"
+]
+
+[project.entry-points.pytest11]
+vocareum = "vocareum_plugin.plugin"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["vocareum_plugin"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+python_files = "test_*.py"
+
+[tool.coverage.run]
+source = ["src/vocareum_plugin"]
+omit = ["tests/*"]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B", "I"]
+ignore = []
+fixable = ["ALL"]
+unfixable = ["B"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.mypy]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
