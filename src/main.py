@@ -7,7 +7,7 @@ from typing import Protocol
 import pydantic_ai
 
 import settings
-from agents import v1, v2
+from agents import v1, v2, v3, v4
 
 logger = logging.getLogger(__name__)
 logging.getLogger("httpx2").setLevel(logging.WARNING)
@@ -23,6 +23,8 @@ class Agent(Protocol):
 _AGENT_VERSIONS: dict[str, Callable[[settings.Settings], Agent]] = {
     "v1": v1.Agent,
     "v2": v2.Agent,
+    "v3": v3.Agent,
+    "v4": v4.Agent,
 }
 
 
