@@ -4,16 +4,12 @@ import uuid
 from collections.abc import Callable
 from typing import Protocol
 
-import pydantic_ai
-
 import settings
 from agents import v1, v2, v3, v4
 
 logger = logging.getLogger(__name__)
 logging.getLogger("httpx2").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
-
-pydantic_ai.Agent.instrument_all()
 
 
 class Agent(Protocol):
@@ -32,6 +28,14 @@ async def main(game_id: uuid.UUID, base_url: str, agent_version: str) -> None:
     settings_ = settings.settings()
     loglevel = logging.getLevelNamesMapping()[settings_.loglevel]
     logging.basicConfig(level=loglevel)
+
+    try:
+        import logfire
+
+        logfire.configure()
+        logfire.instrument_pydantic_ai()
+    except ImportError:
+        logger.debug("logfire not installed; skipping instrumentation")
 
     agent = _AGENT_VERSIONS[agent_version](settings_)
     await agent.loop(game_id=game_id, base_url=base_url)

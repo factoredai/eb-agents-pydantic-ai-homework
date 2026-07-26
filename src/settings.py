@@ -23,6 +23,7 @@ class Settings(pydantic_settings.BaseSettings):
     loglevel: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     rulebook: pathlib.Path
+    howto: pathlib.Path
 
     sleep_seconds: int = 2
 
