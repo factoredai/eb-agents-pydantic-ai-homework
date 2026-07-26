@@ -26,6 +26,7 @@ class Agent:
 
     def _build_agent(self) -> pydantic_ai.Agent[capabilities.PlayerDependencies]:
         rulebook = self._settings.rulebook.read_text()
+        howto = self._settings.howto.read_text()
 
         # TODO: instantiate the agent with the instructions and the
         # capabilities that enable the agent to talk to the Teyuna API.

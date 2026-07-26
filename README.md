@@ -21,6 +21,13 @@ In this lab we will gain experience building agents that can work reliably in a 
 - [UV installed](https://docs.astral.sh/uv/)
 - Run `make setup` to bring the necesary dependencies from the teyuna repository. If you do `make setup-validate` you will be able to see some *stochastic* agents (as in, agents that made pick from available decisions at random) playing the game.
 - Create a `.env` file in the repo root, copy the content of `.sample.env` and fill in the values to specify the LLM provider and model to use.
+- **Optional — [Logfire](https://logfire.pydantic.dev/)**: if you have a Pydantic Logfire account, you can inspect agent runs (LLM calls, tool use, timing) in their UI. Install the optional extra and set your token:
+
+  ```bash
+  uv sync --extra logfire
+  ```
+
+  Then uncomment `LOGFIRE_TOKEN` in your `.env` and paste the write token from your Logfire project. Without Logfire installed, the agents still run normally.
 
 Your goal is to build an agent that can play the game decently well, better than the stochastic agents available in the `teyuna-simulate` command. You will do it by incrementally adding more capabilities to the agent. In each of the tasks below, you will need to develop a new version of the agent. Once you think you are done with the implementation of each task, you can test it with `make run agent=[version]`, which will launch a simulation where you can watch two stochastic agents playing against the one you created.
 

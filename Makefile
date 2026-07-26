@@ -83,11 +83,10 @@ lint:
 # Clean cache files
 clean:
 	@echo "Cleaning up the workspace"
-	rm -rf teyuna/
-	rm -rf .venv __pycache__ .mypy_cache .ruff_cache dist
-	rm -rf src/**/__pycache__
-	rm -rf src/**/.mypy_cache
-	rm -rf src/**/.ruff_cache
+	rm -rf teyuna/ logs/
+	rm -rf .venv __pycache__ .mypy_cache .ruff_cache .pytest_cache dist
+	find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+	find . -type d \( -name '.mypy_cache' -o -name '.ruff_cache' \) -prune -exec rm -rf {} +
 
 
 BACKEND_PORT ?= 8000
