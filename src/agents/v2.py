@@ -23,39 +23,28 @@ class Agent:
         You are playing Teyuna (a Catan-like game) as the player named
         "$nickname". That exact nickname is how you appear in game state;
         identify yourself by it when reading players, turns, and scores.
-        Your goal is to reach 10 victory points before your opponents.\n\n
-        ## Turn discipline\n
-        Each tick: read the current game state, then act only when required.\n
-        - If the lobby is waiting for players or it is not your turn, do not
-        force actions; briefly note that you are waiting.\n
-        - When it is your turn (or you must discard / move the conquistador /
-        resolve a special phase), take one coherent set of legal actions for
-        the current phase, then stop.\n
-        - Prefer legal, high-value moves. If a request returns 400, read the
-        error detail, correct the payload, and retry once if still useful.\n
-        - Do not spam the same failed actions.\n\n
-        ## Actions\n
-        Use `get_game_state` / `get_hand` first, then `submit_action` with a
-        payload that matches the tool schema. Coordinates are `[q, r, d]`.\n
-        Phase → kind:\n
-        - `first placement` / `second placement` → `free_placement`\n
-        - `dice roll` → `advance` (or play a wisdom card)\n
-        - `discard resources` → `discard_resources`\n
-        - `move conquistator` → `move_conquistator`\n
-        - `trade and build` → build / trade / buy, then `advance`\n
-        - `end game` → stop; do not submit further actions\n\n
-        ## Strategy (keep it practical)\n
-        - Opening placements: favor vertices with diverse, high-probability
-        resource numbers; attach a legal adjacent path.\n
-        - During trade & build: spend resources on paths/terraces/great
-        terraces/wisdom cards that increase VP or board position before ending
-        the turn with `advance`.\n
-        - Trade when it clearly helps a near-term build; decline or ignore
-        bad offers.\n
-        - On a 7: discard correctly if required, then place the conquistator
-        to block strong opponents and steal when allowed.\n
-        - Track your VP and play toward 10; stop when the phase is `end game`.\n\n
-        ## Rulebook\n$rulebook
+        Your goal is to reach 10 victory points before your opponents.
+
+        ## Tools
+        You already joined and authenticated. Play only through these tools:
+        1. `get_game_state()` — public board, phase, turn order, discards, trades.
+        2. `get_hand()` — your private resources and wisdom cards.
+        3. `submit_action(action)` — one legal move; always set `kind`.
+
+        Coordinates are length-3 integer arrays `[q, r, d]` (not objects).
+        Resource keys are lowercase (wood, stone, maize, cotton, gold).
+        Omit `by`, `due_to_timeout`, and `rng_` on actions.
+
+        Follow the how-to decision loop and phase→action map below. Prefer
+        legal, high-value moves. If `submit_action` returns 400 / an error
+        detail, fix the payload and retry once if still useful; otherwise
+        stop for this tick.
+
+        ## Rulebook
+        $rulebook
+
+        ## How to play
+        $howto
         """
     )
 
@@ -86,12 +75,10 @@ class Agent:
         history: list[messages.ModelMessage] = []
         while True:
             prompt = (
-                f"Continue playing Teyuna game `{game_id}`.\n"
-                "1. Otherwise, fetch the latest game state (and hand if useful).\n"
-                "2. If you must act now, choose the best legal action(s) for the "
-                "current phase and submit them.\n"
-                "3. If you are waiting on other players, take no action.\n"
-                "Reply with a short summary of what you observed and what you did."
+                f"Continue playing Teyuna game `{game_id}` as `{self._nickname}`.\n"
+                "Fetch game state (and hand if useful), act only if required, "
+                "then stop. Reply with a short summary of what you observed "
+                "and what you did."
             )
             # TODO: call the agent with the prompt, dependencies and history here.
             ## homework:start
